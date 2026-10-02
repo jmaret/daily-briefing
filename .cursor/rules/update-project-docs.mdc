@@ -1,0 +1,15 @@
+---
+description: Keep the vision and architecture documents aligned with behavior changes
+alwaysApply: true
+---
+
+# Update project documents
+
+When a change alters behavior, data sources, settings, storage, or structure, update both documents in that same change:
+
+- `docs/vision-and-requirements.md` for what the app should do
+- `docs/architecture.md` for the conceptual, logical, and physical design
+
+Leave both documents unchanged for comments, formatting, and test-only edits that do not change behavior.
+
+Example: adding a headline feed means a new requirement and an updated feed list in the logical and physical sections.
