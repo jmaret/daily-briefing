@@ -216,6 +216,42 @@ def test_architecture_page_covers_three_views(monkeypatch, prefs_path):
     assert len(diagrams) == 3
 
 
+def test_forbidden_feed_is_read_through_the_backup(monkeypatch):
+    calls = []
+
+    def get(url, **kwargs):
+        calls.append(url)
+        if url == app.FEEDS["NPR News"]:
+            return FakeResponse(status_code=403)
+        if url == app.RSS2JSON_URL:
+            return FakeResponse(
+                payload={
+                    "status": "ok",
+                    "items": [
+                        {
+                            "title": "From the backup",
+                            "link": "https://www.npr.org/story",
+                            "pubDate": "Fri, 02 Oct 2026 12:00:00 GMT",
+                        }
+                    ],
+                }
+            )
+        raise AssertionError(f"unexpected URL {url}")
+
+    monkeypatch.setattr(requests, "get", get)
+    app.fetch_headlines.clear()
+    headlines = app.fetch_headlines(app.FEEDS["NPR News"])
+
+    assert calls == [app.FEEDS["NPR News"], app.RSS2JSON_URL]
+    assert headlines == [
+        {
+            "title": "From the backup",
+            "link": "https://www.npr.org/story",
+            "published": "Fri, 02 Oct 2026 12:00:00 GMT",
+        }
+    ]
+
+
 def test_unknown_city_shows_a_warning(monkeypatch, prefs_path):
     monkeypatch.setattr(requests, "get", fake_get)
 

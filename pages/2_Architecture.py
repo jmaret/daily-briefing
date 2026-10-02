@@ -36,7 +36,7 @@ st.write(
     "The main column asks for a place, then weather, then air quality when it is "
     "enabled, then headlines. Each outside call can fail on its own. A failed city "
     "lookup stops the rest of the page. A failed forecast, air-quality call, or feed "
-    "does not hide the other sections. The two explanation pages are "
+    "does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The two explanation pages are "
     "`pages/1_Vision_and_requirements.py` and `pages/2_Architecture.py`. The briefing links to both."
 )
 st.mermaid_chart(logical)
@@ -80,7 +80,7 @@ st.markdown(
 | Tests | `tests/`, run with `.venv/bin/python -m pytest` |
 | Place and weather | `geocoding-api.open-meteo.com`, `api.open-meteo.com` |
 | Air quality | `air-quality-api.open-meteo.com` |
-| Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS` |
+| Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS`. A 403 is retried through `api.rss2json.com` |
 """
 )
 st.write(

@@ -19,7 +19,7 @@ flowchart TD
 
 ## Logical
 
-`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, and `pages/2_Architecture.py`, then runs the one the reader opened. The briefing links to both summaries. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections.
+`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, and `pages/2_Architecture.py`, then runs the one the reader opened. The briefing links to both summaries. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`.
 
 ```mermaid
 flowchart TD
@@ -89,6 +89,6 @@ flowchart TD
 | Tests | `tests/`, run with `.venv/bin/python -m pytest` |
 | Place and weather | `geocoding-api.open-meteo.com`, `api.open-meteo.com` |
 | Air quality | `air-quality-api.open-meteo.com` |
-| Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS` |
+| Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS`. A 403 is retried through `api.rss2json.com` |
 
 Tests mock those HTTP calls. They do not need a network connection or a running Streamlit server.
