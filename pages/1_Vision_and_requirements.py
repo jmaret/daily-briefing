@@ -1,15 +1,25 @@
-# Daily briefing: vision and requirements
+import streamlit as st
 
-## Vision
+import app
 
-Daily briefing is a personal morning page. You open it on your own computer, see the weather and air quality for a city you care about, and scan a few headlines. It does not ask you to create an account or supply an API key.
+app.prepare_page("Vision and requirements")
 
-## Who it is for
+st.title("Vision and requirements")
+st.page_link("briefing.py", label="Back to the briefing")
 
-One person, running the app locally. Settings stay on that machine.
+st.header("Vision")
+st.write(
+    "Daily briefing is a personal morning page. You open it on your own computer, "
+    "see the weather and air quality for a city you care about, and scan a few headlines. "
+    "It does not ask you to create an account or supply an API key."
+)
 
-## Requirements
+st.header("Who it is for")
+st.write("One person, running the app locally. Settings stay on that machine.")
 
+st.header("Requirements")
+st.markdown(
+    """
 1. Look up a city by name and show the matching place.
 2. Show the current temperature, how it feels, conditions, and wind, plus a five-day forecast with high, low, and chance of rain.
 3. Let the reader choose Fahrenheit or Celsius. Wind uses miles per hour with Fahrenheit and kilometers per hour with Celsius.
@@ -19,8 +29,11 @@ One person, running the app locally. Settings stay on that machine.
 7. When a city cannot be found, or a weather, air-quality, or headline request fails, say so on the page and still show whatever else loaded.
 8. Reuse recent weather, air-quality, and headline responses so repeat views do not call those services every time.
 9. Show a city-and-weather illustration behind the page, with a matching picture as the browser icon and the sidebar logo. Keep the briefing itself on a light panel so it stays readable.
-10. Link from the briefing to a summary of this vision and these requirements, and to a summary of the conceptual, logical, and physical architecture. The architecture summary shows a diagram for each of those three views.
+10. Link from the briefing to this summary and to a summary of the conceptual, logical, and physical architecture. The architecture summary shows a diagram for each of those three views.
+"""
+)
 
-## Out of scope
-
-Watchlists, meal planning, reading logs, and trip cost estimates are not part of this app.
+st.header("Out of scope")
+st.write(
+    "Watchlists, meal planning, reading logs, and trip cost estimates are not part of this app."
+)

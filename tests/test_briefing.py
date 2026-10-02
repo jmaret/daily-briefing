@@ -135,8 +135,7 @@ def test_preferences_round_trip_and_fallbacks(prefs_path):
     assert partial["show_air_quality"] is True
 
 
-def test_briefing_page_uses_saved_defaults(monkeypatch, tmp_path):
-    monkeypatch.setenv("DAILY_BRIEFING_PREFS", str(tmp_path / "preferences.json"))
+def test_briefing_page_uses_saved_defaults(monkeypatch, prefs_path):
     monkeypatch.setattr(requests, "get", fake_get)
 
     page = AppTest.from_file(str(Path(app.__file__)))
@@ -153,8 +152,71 @@ def test_briefing_page_uses_saved_defaults(monkeypatch, tmp_path):
     assert any("Sample headline" in item.value for item in page.markdown)
 
 
-def test_unknown_city_shows_a_warning(monkeypatch, tmp_path):
-    monkeypatch.setenv("DAILY_BRIEFING_PREFS", str(tmp_path / "preferences.json"))
+def _nodes(page: AppTest) -> list:
+    found = []
+
+    def walk(node) -> None:
+        found.append(node)
+        children = getattr(node, "children", None)
+        if isinstance(children, dict):
+            for child in children.values():
+                walk(child)
+
+    walk(page._tree)
+    return found
+
+
+def _link_labels(page: AppTest) -> list[str]:
+    return [
+        node.label
+        for node in _nodes(page)
+        if type(node).__name__ == "UnknownElement" and getattr(node, "label", None)
+    ]
+
+
+def test_briefing_links_to_the_summaries(monkeypatch, prefs_path):
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    page = AppTest.from_file(str(Path(app.__file__)))
+    page.run(timeout=30)
+
+    assert not page.exception
+    labels = _link_labels(page)
+    assert "Vision and requirements" in labels
+    assert "Architecture" in labels
+
+
+def test_vision_page_summarizes_requirements(monkeypatch, prefs_path):
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    page = AppTest.from_file(str(Path(app.__file__)))
+    page.run(timeout=30)
+    page.switch_page("pages/1_Vision_and_requirements.py").run(timeout=30)
+
+    assert not page.exception
+    assert page.title[0].value == "Vision and requirements"
+    headers = [item.value for item in page.header]
+    assert headers == ["Vision", "Who it is for", "Requirements", "Out of scope"]
+    assert "Back to the briefing" in _link_labels(page)
+
+
+def test_architecture_page_covers_three_views(monkeypatch, prefs_path):
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    page = AppTest.from_file(str(Path(app.__file__)))
+    page.run(timeout=30)
+    page.switch_page("pages/2_Architecture.py").run(timeout=30)
+
+    assert not page.exception
+    assert page.title[0].value == "Architecture"
+    headers = [item.value for item in page.header]
+    assert headers == ["Conceptual", "Logical", "Physical"]
+    assert "Back to the briefing" in _link_labels(page)
+    diagrams = [item.value for item in page.markdown if "flowchart TD" in item.value]
+    assert len(diagrams) == 3
+
+
+def test_unknown_city_shows_a_warning(monkeypatch, prefs_path):
     monkeypatch.setattr(requests, "get", fake_get)
 
     page = AppTest.from_file(str(Path(app.__file__)))
