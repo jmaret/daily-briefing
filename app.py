@@ -59,11 +59,20 @@ def load_prefs() -> dict:
         saved = json.loads(PREFS_PATH.read_text())
     except (OSError, json.JSONDecodeError):
         return dict(DEFAULT_PREFS)
+    if not isinstance(saved, dict):
+        return dict(DEFAULT_PREFS)
+
     prefs = dict(DEFAULT_PREFS)
-    prefs.update({key: saved[key] for key in DEFAULT_PREFS if key in saved})
-    prefs["feeds"] = [name for name in prefs["feeds"] if name in FEEDS]
-    if prefs["units"] not in ("celsius", "fahrenheit"):
-        prefs["units"] = DEFAULT_PREFS["units"]
+    city = saved.get("city")
+    if isinstance(city, str) and city.strip():
+        prefs["city"] = city
+    if saved.get("units") in ("celsius", "fahrenheit"):
+        prefs["units"] = saved["units"]
+    if isinstance(saved.get("show_air_quality"), bool):
+        prefs["show_air_quality"] = saved["show_air_quality"]
+    feeds = saved.get("feeds")
+    if isinstance(feeds, list):
+        prefs["feeds"] = [name for name in feeds if isinstance(name, str) and name in FEEDS]
     return prefs
 
 

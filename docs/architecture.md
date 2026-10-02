@@ -33,7 +33,7 @@ flowchart LR
 | Air quality | US AQI, PM2.5, and PM10 | 15 minutes |
 | Headlines | Up to five items per selected feed | 15 minutes |
 
-Saved feeds that are no longer in the catalog are dropped. An unrecognized unit falls back to Fahrenheit. A missing or unreadable preferences file falls back to New York, Fahrenheit, air quality on, and BBC News plus NPR News.
+Saved feeds that are no longer in the catalog are dropped. An unrecognized unit falls back to Fahrenheit. A missing, unreadable, or wrongly shaped preferences file falls back to New York, Fahrenheit, air quality on, and BBC News plus NPR News. A file that is JSON but not an object, or a setting that is not the expected type, is treated the same way for that setting.
 
 ## Physical
 

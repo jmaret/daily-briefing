@@ -15,7 +15,7 @@ One person, running the app locally. Settings stay on that machine.
 3. Let the reader choose Fahrenheit or Celsius. Wind uses miles per hour with Fahrenheit and kilometers per hour with Celsius.
 4. Show US AQI, PM2.5, and PM10, and let the reader hide that section.
 5. Show headlines from the feeds the reader selects: BBC News, NPR News, and Ars Technica. Each item has a title, a link when one exists, and a published time when one exists.
-6. Remember the city, units, air-quality choice, and selected feeds in a local file.
+6. Remember the city, units, air-quality choice, and selected feeds in a local file. If that file is missing, unreadable, or not a settings object, open with the defaults instead of stopping.
 7. When a city cannot be found, or a weather, air-quality, or headline request fails, say so on the page and still show whatever else loaded.
 8. Reuse recent weather, air-quality, and headline responses so repeat views do not call those services every time.
 

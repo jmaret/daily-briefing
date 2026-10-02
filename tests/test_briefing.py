@@ -122,6 +122,18 @@ def test_preferences_round_trip_and_fallbacks(prefs_path):
     assert repaired["units"] == "fahrenheit"
     assert repaired["show_air_quality"] is True
 
+    prefs_path.write_text("null", encoding="utf-8")
+    assert app.load_prefs() == app.DEFAULT_PREFS
+
+    prefs_path.write_text(
+        json.dumps({"city": "Paris", "feeds": None, "show_air_quality": "yes"}),
+        encoding="utf-8",
+    )
+    partial = app.load_prefs()
+    assert partial["city"] == "Paris"
+    assert partial["feeds"] == app.DEFAULT_PREFS["feeds"]
+    assert partial["show_air_quality"] is True
+
 
 def test_briefing_page_uses_saved_defaults(monkeypatch, tmp_path):
     monkeypatch.setenv("DAILY_BRIEFING_PREFS", str(tmp_path / "preferences.json"))
