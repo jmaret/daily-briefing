@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,10 @@ import streamlit as st
 PREFS_PATH = Path(
     os.environ.get("DAILY_BRIEFING_PREFS", Path(__file__).with_name("preferences.json"))
 )
+ASSETS_DIR = Path(__file__).with_name("assets")
+BACKGROUND_PATH = ASSETS_DIR / "city-weather-background.jpg"
+ICON_PATH = ASSETS_DIR / "city-weather-icon.jpg"
+LOGO_PATH = ASSETS_DIR / "city-weather-logo.jpg"
 
 FEEDS = {
     "BBC News": "https://feeds.bbci.co.uk/news/rss.xml",
@@ -265,61 +270,62 @@ def render_headlines(selected_feeds: list[str]) -> None:
                 st.caption(item["published"])
 
 
-def main() -> None:
-    st.set_page_config(page_title="Daily briefing", page_icon=":newspaper:", layout="wide")
-    prefs = load_prefs()
+def apply_artwork() -> None:
+    encoded = base64.b64encode(BACKGROUND_PATH.read_bytes()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpeg;base64,{encoded}");
+            background-size: cover;
+            background-position: center 42%;
+            background-attachment: fixed;
+        }}
+        [data-testid="stHeader"] {{
+            background: transparent;
+        }}
+        [data-testid="stSidebar"] {{
+            background-color: rgba(246, 241, 231, 0.9);
+        }}
+        [data-testid="stSidebarHeader"] {{
+            height: auto;
+        }}
+        img[data-testid="stSidebarLogo"] {{
+            height: 168px;
+            width: auto;
+        }}
+        [data-testid="stMain"] .block-container {{
+            max-width: 1100px;
+            background: rgba(255, 250, 244, 0.72);
+            border-radius: 18px;
+            padding: 1.5rem 2rem 2.5rem;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with st.sidebar:
-        st.header("Settings")
-        city = st.text_input("City", value=prefs["city"]).strip()
-        units = st.radio(
-            "Units",
-            options=["fahrenheit", "celsius"],
-            index=0 if prefs["units"] == "fahrenheit" else 1,
-            format_func=lambda value: "Fahrenheit" if value == "fahrenheit" else "Celsius",
-        )
-        show_air_quality = st.checkbox("Show air quality", value=bool(prefs["show_air_quality"]))
-        feeds = st.multiselect("Feeds", options=list(FEEDS), default=prefs["feeds"])
 
-    updated = {
-        "city": city or prefs["city"],
-        "units": units,
-        "show_air_quality": show_air_quality,
-        "feeds": feeds,
-    }
-    if updated != prefs:
-        save_prefs(updated)
+def prepare_page(title: str) -> None:
+    st.set_page_config(page_title=title, page_icon=str(ICON_PATH), layout="wide")
+    st.logo(str(LOGO_PATH), icon_image=str(ICON_PATH), size="large")
+    apply_artwork()
 
-    st.title("Daily briefing")
-    st.caption("Weather from Open-Meteo and headlines from the feeds you pick.")
 
-    if not city:
-        st.info("Enter a city in the sidebar.")
-        return
-
-    try:
-        place = geocode(city)
-    except requests.RequestException as error:
-        st.error(f"Could not look up that city: {error}")
-        return
-
-    if place is None:
-        st.warning(f"No match for “{city}”. Try a more specific name.")
-        return
-
-    try:
-        render_weather(place, units)
-    except requests.RequestException as error:
-        st.error(f"Could not load the forecast: {error}")
-
-    if show_air_quality:
-        try:
-            render_air_quality(place)
-        except requests.RequestException as error:
-            st.error(f"Could not load air quality: {error}")
-
-    render_headlines(feeds)
+def run() -> None:
+    briefing = st.Page("briefing.py", title="Daily briefing", default=True)
+    vision = st.Page(
+        "pages/1_Vision_and_requirements.py",
+        title="Vision and requirements",
+        url_path="vision",
+    )
+    architecture = st.Page(
+        "pages/2_Architecture.py",
+        title="Architecture",
+        url_path="architecture",
+    )
+    st.navigation([briefing, vision, architecture]).run()
 
 
 if __name__ == "__main__":
-    main()
+    run()

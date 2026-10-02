@@ -2,28 +2,36 @@
 
 ## Conceptual
 
-The reader has one page, a briefing. Four ideas sit behind it: a place, the weather there, the air there, and a short list of headlines. Preferences remember how the reader wants that page set up.
+The reader has a briefing, and two explanations of it: the vision and requirements, and this architecture. Four ideas sit behind the briefing: a place, the weather there, the air there, and a short list of headlines. Preferences remember how the reader wants that page set up. The architecture page in the app draws the diagrams in this document.
 
 ```mermaid
-flowchart LR
+flowchart TD
   reader[Reader]
-  briefing[BriefingPage]
-  place[Place]
-  weather[Weather]
-  air[AirQuality]
-  headlines[Headlines]
-  prefs[Preferences]
-  reader --> briefing
-  briefing --> place
-  briefing --> weather
-  briefing --> air
-  briefing --> headlines
-  prefs --> briefing
+  reader --> briefing[Briefing]
+  reader --> vision[Vision and requirements]
+  reader --> architecture[Architecture]
+  briefing --> place[Place]
+  briefing --> weather[Weather]
+  briefing --> air[Air quality]
+  briefing --> headlines[Headlines]
+  prefs[Preferences] --> briefing
 ```
 
 ## Logical
 
-`app.py` is the whole application. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections.
+`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, and `pages/2_Architecture.py`, then runs the one the reader opened. The briefing links to both summaries. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections.
+
+```mermaid
+flowchart TD
+  open[Open the briefing] --> prefs[Load preferences]
+  prefs --> place[Look up the city]
+  place -->|No match, or the lookup fails| stop[Stop the rest of the page]
+  place -->|Place found| weather[Load the forecast]
+  weather --> choice{Air quality on?}
+  choice -->|Yes| air[Load air quality]
+  choice -->|No| headlines[Load headlines]
+  air --> headlines
+```
 
 | Concern | What it does | How long a result is reused |
 | --- | --- | --- |
@@ -39,9 +47,43 @@ Saved feeds that are no longer in the catalog are dropped. An unrecognized unit 
 
 The app is one Python process, started with `streamlit run app.py` from a local virtual environment (`.venv`). The page is served at `http://localhost:8501`.
 
+```mermaid
+flowchart TD
+  subgraph local [On this computer]
+    browser[Browser]
+    process[Streamlit process]
+    briefing[briefing.py]
+    visionPage[Vision page]
+    architecturePage[Architecture page]
+    preferences[preferences.json]
+    artwork[Artwork and theme]
+    browser --> process
+    process --> briefing
+    process --> visionPage
+    process --> architecturePage
+    process --> preferences
+    process --> artwork
+  end
+  subgraph remote [Outside services]
+    geocode[City lookup]
+    forecast[Weather]
+    airQuality[Air quality]
+    feeds[Headline feeds]
+  end
+  process --> geocode
+  process --> forecast
+  process --> airQuality
+  process --> feeds
+```
+
 | Piece | Where it lives |
 | --- | --- |
-| Application | `app.py` |
+| Entrypoint | `app.py` registers the three pages and runs the selected one |
+| Briefing | `briefing.py` |
+| Vision summary | `pages/1_Vision_and_requirements.py` |
+| Architecture summary | `pages/2_Architecture.py` |
+| Artwork | `assets/city-weather-background.jpg` behind the page, `assets/city-weather-icon.jpg` as the browser icon, `assets/city-weather-logo.jpg` in the sidebar |
+| Theme | `.streamlit/config.toml` sets the light widget palette |
 | Dependencies | `requirements.txt`, installed into `.venv` |
 | Preferences | `preferences.json` beside `app.py`, unless `DAILY_BRIEFING_PREFS` points somewhere else |
 | Tests | `tests/`, run with `.venv/bin/python -m pytest` |
