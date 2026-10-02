@@ -160,25 +160,46 @@ def fetch_air_quality(latitude: float, longitude: float) -> dict:
     return response.json()
 
 
-@st.cache_data(ttl=60 * 15, show_spinner=False)
-def fetch_headlines(url: str, limit: int = 5) -> list[dict]:
+FEED_HEADERS = {"User-Agent": "daily-briefing/0.1"}
+RSS2JSON_URL = "https://api.rss2json.com/v1/api.json"
+
+
+def _headline(title: str | None, link: str | None, published: str | None) -> dict:
+    return {
+        "title": title or "Untitled",
+        "link": link or "",
+        "published": published or "",
+    }
+
+
+def _headlines_via_rss2json(url: str, limit: int) -> list[dict]:
     response = requests.get(
-        url,
+        RSS2JSON_URL,
+        params={"rss_url": url},
         timeout=15,
-        headers={"User-Agent": "daily-briefing/0.1"},
+        headers=FEED_HEADERS,
     )
     response.raise_for_status()
+    payload = response.json()
+    if payload.get("status") != "ok":
+        raise requests.HTTPError(payload.get("message") or "backup feed reader failed")
+    return [
+        _headline(entry.get("title"), entry.get("link"), entry.get("pubDate"))
+        for entry in (payload.get("items") or [])[:limit]
+    ]
+
+
+@st.cache_data(ttl=60 * 15, show_spinner=False)
+def fetch_headlines(url: str, limit: int = 5) -> list[dict]:
+    response = requests.get(url, timeout=15, headers=FEED_HEADERS)
+    if response.status_code == 403:
+        return _headlines_via_rss2json(url, limit)
+    response.raise_for_status()
     parsed = feedparser.parse(response.content)
-    headlines = []
-    for entry in parsed.entries[:limit]:
-        headlines.append(
-            {
-                "title": entry.get("title") or "Untitled",
-                "link": entry.get("link") or "",
-                "published": entry.get("published") or "",
-            }
-        )
-    return headlines
+    return [
+        _headline(entry.get("title"), entry.get("link"), entry.get("published"))
+        for entry in parsed.entries[:limit]
+    ]
 
 
 def place_name(place: dict) -> str:
