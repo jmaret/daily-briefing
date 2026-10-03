@@ -19,7 +19,7 @@ flowchart TD
 
 ## Logical
 
-`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, and `pages/2_Architecture.py`, then runs the one the reader opened. The briefing links to both summaries. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`.
+`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, and `pages/2_Architecture.py`, then runs the one the reader opened. The briefing links to both summaries. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The briefing also shows the latest GitHub release and its notes, and the reader can open an older release from the same list.
 
 ```mermaid
 flowchart TD
@@ -40,6 +40,7 @@ flowchart TD
 | Weather | Current conditions and five daily rows | 15 minutes |
 | Air quality | US AQI, PM2.5, and PM10 | 15 minutes |
 | Headlines | Up to five items per selected feed | 15 minutes |
+| Releases | Latest version and its notes, with older releases available | 15 minutes |
 
 Saved feeds that are no longer in the catalog are dropped. An unrecognized unit falls back to Fahrenheit. A missing, unreadable, or wrongly shaped preferences file falls back to New York, Fahrenheit, air quality on, and BBC News plus NPR News. A file that is JSON but not an object, or a setting that is not the expected type, is treated the same way for that setting.
 
@@ -69,11 +70,13 @@ flowchart TD
     forecast[Weather]
     airQuality[Air quality]
     feeds[Headline feeds]
+    github[GitHub releases]
   end
   process --> geocode
   process --> forecast
   process --> airQuality
   process --> feeds
+  process --> github
 ```
 
 | Piece | Where it lives |
@@ -90,5 +93,6 @@ flowchart TD
 | Place and weather | `geocoding-api.open-meteo.com`, `api.open-meteo.com` |
 | Air quality | `air-quality-api.open-meteo.com` |
 | Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS`. A 403 is retried through `api.rss2json.com` |
+| Releases | GitHub Releases for `jmaret/daily-briefing`, created by `.github/workflows/release.yml` on each push to `main`. A private repository needs `GITHUB_TOKEN` in the environment or in Streamlit secrets |
 
 Tests mock those HTTP calls. They do not need a network connection or a running Streamlit server.

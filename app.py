@@ -202,6 +202,95 @@ def fetch_headlines(url: str, limit: int = 5) -> list[dict]:
     ]
 
 
+GITHUB_REPO = os.environ.get("DAILY_BRIEFING_REPO", "jmaret/daily-briefing")
+
+
+def github_token() -> str:
+    for name in ("GITHUB_TOKEN", "GH_TOKEN"):
+        value = os.environ.get(name)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    try:
+        value = st.secrets["GITHUB_TOKEN"]
+    except Exception:
+        return ""
+    return value.strip() if isinstance(value, str) else ""
+
+
+@st.cache_data(ttl=60 * 15, show_spinner=False)
+def fetch_releases(token: str) -> list[dict]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "daily-briefing/0.1",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    response = requests.get(
+        f"https://api.github.com/repos/{GITHUB_REPO}/releases",
+        params={"per_page": 100},
+        headers=headers,
+        timeout=15,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, list):
+        return []
+    releases = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        tag = item.get("tag_name")
+        if not isinstance(tag, str) or not tag.strip():
+            continue
+        name = item.get("name")
+        body = item.get("body")
+        published = item.get("published_at")
+        url = item.get("html_url")
+        releases.append(
+            {
+                "tag": tag,
+                "name": name if isinstance(name, str) and name.strip() else tag,
+                "body": body if isinstance(body, str) else "",
+                "published": published if isinstance(published, str) else "",
+                "url": url if isinstance(url, str) else "",
+            }
+        )
+    return releases
+
+
+def render_releases() -> None:
+    try:
+        releases = fetch_releases(github_token())
+    except requests.HTTPError as error:
+        status = getattr(error.response, "status_code", None)
+        if status in (401, 403, 404):
+            st.caption(
+                "Could not load releases. A private repository needs GITHUB_TOKEN in the environment or in Streamlit secrets."
+            )
+            return
+        st.caption(f"Could not load releases: {error}")
+        return
+    except requests.RequestException as error:
+        st.caption(f"Could not load releases: {error}")
+        return
+    if not releases:
+        st.caption("No GitHub releases yet.")
+        return
+
+    latest = releases[0]
+    st.caption(f"Release {latest['tag']}")
+    with st.expander("Release notes"):
+        tags = [item["tag"] for item in releases]
+        choice = st.selectbox("Release", tags, index=0)
+        selected = next(item for item in releases if item["tag"] == choice)
+        if selected["published"]:
+            st.caption(selected["published"])
+        if selected["url"]:
+            st.markdown(f"[View on GitHub]({selected['url']})")
+        st.markdown(selected["body"] or "No notes for this release.")
+
+
 def place_name(place: dict) -> str:
     parts = [place.get("name"), place.get("admin1"), place.get("country")]
     return ", ".join(part for part in parts if part)

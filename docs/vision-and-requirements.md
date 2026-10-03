@@ -20,6 +20,7 @@ One person, running the app locally. Settings stay on that machine.
 8. Reuse recent weather, air-quality, and headline responses so repeat views do not call those services every time.
 9. Show a city-and-weather illustration behind the page, with a matching picture as the browser icon and the sidebar logo. Keep the briefing itself on a light panel so it stays readable.
 10. Link from the briefing to a summary of this vision and these requirements, and to a summary of the conceptual, logical, and physical architecture. The architecture summary shows a diagram for each of those three views.
+11. Show the latest GitHub release version and its notes, and let the reader open an older release. Each update that lands on `main` creates the next release.
 
 ## Out of scope
 

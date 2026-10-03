@@ -72,6 +72,25 @@ def fake_get(url, **kwargs):
         )
     if url in app.FEEDS.values():
         return FakeResponse(content=RSS)
+    if url.endswith("/releases") and "api.github.com/repos/" in url:
+        return FakeResponse(
+            [
+                {
+                    "tag_name": "v2",
+                    "name": "v2",
+                    "body": "NPR backup",
+                    "published_at": "2026-10-02T23:00:00Z",
+                    "html_url": "https://github.com/jmaret/daily-briefing/releases/tag/v2",
+                },
+                {
+                    "tag_name": "v1",
+                    "name": "v1",
+                    "body": "First look",
+                    "published_at": "2026-10-01T23:00:00Z",
+                    "html_url": "https://github.com/jmaret/daily-briefing/releases/tag/v1",
+                },
+            ]
+        )
     raise AssertionError(f"unexpected URL {url}")
 
 
@@ -150,6 +169,14 @@ def test_briefing_page_uses_saved_defaults(monkeypatch, prefs_path):
     assert metrics["Wind"] == "8 mph"
     assert metrics["US AQI"] == "42 · Good"
     assert any("Sample headline" in item.value for item in page.markdown)
+    assert any(item.value == "Release v2" for item in page.caption)
+    assert page.selectbox[0].value == "v2"
+    assert page.selectbox[0].options == ["v2", "v1"]
+    assert any("NPR backup" in item.value for item in page.markdown)
+
+    page.selectbox[0].set_value("v1").run()
+    assert not page.exception
+    assert any("First look" in item.value for item in page.markdown)
 
 
 def _nodes(page: AppTest) -> list:
