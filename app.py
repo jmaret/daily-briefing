@@ -434,7 +434,8 @@ def run() -> None:
         url_path="architecture",
     )
     releases = st.Page("pages/3_Releases.py", title="Releases", url_path="releases")
-    st.navigation([briefing, vision, architecture, releases]).run()
+    cicd = st.Page("pages/4_CI_CD.py", title="CI/CD", url_path="ci-cd")
+    st.navigation([briefing, vision, architecture, releases, cicd]).run()
 
 
 if __name__ == "__main__":
