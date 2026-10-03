@@ -36,7 +36,7 @@ st.write(
     "The main column asks for a place, then weather, then air quality when it is "
     "enabled, then headlines. Each outside call can fail on its own. A failed city "
     "lookup stops the rest of the page. A failed forecast, air-quality call, or feed "
-    "does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The two explanation pages are "
+    "does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The briefing also shows the latest GitHub release and its notes, and the reader can open an older release from the same list. The two explanation pages are "
     "`pages/1_Vision_and_requirements.py` and `pages/2_Architecture.py`. The briefing links to both."
 )
 st.mermaid_chart(logical)
@@ -49,6 +49,7 @@ st.markdown(
 | Weather | Current conditions and five daily rows | 15 minutes |
 | Air quality | US AQI, PM2.5, and PM10 | 15 minutes |
 | Headlines | Up to five items per selected feed | 15 minutes |
+| Releases | Latest version and its notes, with older releases available | 15 minutes |
 """
 )
 st.write(
@@ -81,6 +82,7 @@ st.markdown(
 | Place and weather | `geocoding-api.open-meteo.com`, `api.open-meteo.com` |
 | Air quality | `air-quality-api.open-meteo.com` |
 | Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS`. A 403 is retried through `api.rss2json.com` |
+| Releases | GitHub Releases for `jmaret/daily-briefing`, created by `.github/workflows/release.yml` on each push to `main`. Overlapping pushes wait in line, and a repeat run for the same commit keeps the existing release |
 """
 )
 st.write(

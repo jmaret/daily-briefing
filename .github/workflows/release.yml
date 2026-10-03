@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create the next release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          already="$(gh release list --limit 100 --json tagName,targetCommitish | jq --arg sha "$GITHUB_SHA" '[.[] | select(.targetCommitish == $sha)] | length')"
+          if [ "$already" != "0" ]; then
+            echo "Release already exists for $GITHUB_SHA"
+            exit 0
+          fi
+          for _ in 1 2 3 4 5; do
+            latest="$(gh release list --limit 100 --json tagName | jq '[.[].tagName | select(test("^v[0-9]+$")) | sub("^v"; "") | tonumber] | max // 0')"
+            next="v$((latest + 1))"
+            if gh release create "$next" --target "$GITHUB_SHA" --generate-notes --title "$next"; then
+              exit 0
+            fi
+            echo "Tag $next was taken; choosing the next number"
+          done
+          echo "Could not create a release for $GITHUB_SHA"
+          exit 1
