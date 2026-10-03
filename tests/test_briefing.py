@@ -173,6 +173,7 @@ def test_briefing_page_uses_saved_defaults(monkeypatch, prefs_path):
     assert "Vision and requirements" not in _link_labels(page)
     assert "Architecture" not in _link_labels(page)
     assert "Releases" not in _link_labels(page)
+    assert "CI/CD" not in _link_labels(page)
 
 
 def _nodes(page: AppTest) -> list:
@@ -219,6 +220,13 @@ def test_sidebar_opens_the_summaries_and_releases(monkeypatch, prefs_path):
     page.selectbox[0].set_value("v1").run()
     assert not page.exception
     assert any("First look" in item.value for item in page.markdown)
+
+    page.switch_page("pages/4_CI_CD.py").run(timeout=30)
+    assert not page.exception
+    assert page.title[0].value == "CI/CD"
+    headers = [item.value for item in page.header]
+    assert headers == ["When it runs", "The release job", "What you see", "The deployed app"]
+    assert any("Release workflow" in item.value for item in page.markdown)
 
 
 def test_vision_page_summarizes_requirements(monkeypatch, prefs_path):
