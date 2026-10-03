@@ -280,15 +280,14 @@ def render_releases() -> None:
 
     latest = releases[0]
     st.caption(f"Release {latest['tag']}")
-    with st.expander("Release notes"):
-        tags = [item["tag"] for item in releases]
-        choice = st.selectbox("Release", tags, index=0)
-        selected = next(item for item in releases if item["tag"] == choice)
-        if selected["published"]:
-            st.caption(selected["published"])
-        if selected["url"]:
-            st.markdown(f"[View on GitHub]({selected['url']})")
-        st.markdown(selected["body"] or "No notes for this release.")
+    tags = [item["tag"] for item in releases]
+    choice = st.selectbox("Release", tags, index=0)
+    selected = next(item for item in releases if item["tag"] == choice)
+    if selected["published"]:
+        st.caption(selected["published"])
+    if selected["url"]:
+        st.markdown(f"[View on GitHub]({selected['url']})")
+    st.markdown(selected["body"] or "No notes for this release.")
 
 
 def place_name(place: dict) -> str:
@@ -434,7 +433,8 @@ def run() -> None:
         title="Architecture",
         url_path="architecture",
     )
-    st.navigation([briefing, vision, architecture]).run()
+    releases = st.Page("pages/3_Releases.py", title="Releases", url_path="releases")
+    st.navigation([briefing, vision, architecture, releases]).run()
 
 
 if __name__ == "__main__":

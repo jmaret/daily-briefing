@@ -2,7 +2,7 @@
 
 ## Conceptual
 
-The reader has a briefing, and two explanations of it: the vision and requirements, and this architecture. Four ideas sit behind the briefing: a place, the weather there, the air there, and a short list of headlines. Preferences remember how the reader wants that page set up. The architecture page in the app draws the diagrams in this document.
+The reader has a briefing, two explanations of it, and a releases page. The explanations are the vision and requirements, and this architecture. Four ideas sit behind the briefing: a place, the weather there, the air there, and a short list of headlines. Preferences remember how the reader wants that page set up. The architecture page in the app draws the diagrams in this document.
 
 ```mermaid
 flowchart TD
@@ -10,6 +10,7 @@ flowchart TD
   reader --> briefing[Briefing]
   reader --> vision[Vision and requirements]
   reader --> architecture[Architecture]
+  reader --> releases[Releases]
   briefing --> place[Place]
   briefing --> weather[Weather]
   briefing --> air[Air quality]
@@ -19,7 +20,7 @@ flowchart TD
 
 ## Logical
 
-`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, and `pages/2_Architecture.py`, then runs the one the reader opened. The briefing links to both summaries. The sidebar reads and writes preferences. The main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The briefing also shows the latest GitHub release and its notes, and the reader can open an older release from the same list.
+`app.py` registers `briefing.py`, `pages/1_Vision_and_requirements.py`, `pages/2_Architecture.py`, and `pages/3_Releases.py`, then runs the one the reader opened from the sidebar. The sidebar also reads and writes preferences. The briefing's main column asks for a place, then weather, then air quality when it is enabled, then headlines. Each outside call can fail on its own. A failed city lookup stops the rest of the page. A failed forecast, air-quality call, or feed does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The releases page shows the latest GitHub release and its notes, and the reader can open an older release from the same list.
 
 ```mermaid
 flowchart TD
@@ -56,12 +57,14 @@ flowchart TD
     briefing[briefing.py]
     visionPage[Vision page]
     architecturePage[Architecture page]
+    releasesPage[Releases page]
     preferences[preferences.json]
     artwork[Artwork and theme]
     browser --> process
     process --> briefing
     process --> visionPage
     process --> architecturePage
+    process --> releasesPage
     process --> preferences
     process --> artwork
   end
@@ -81,10 +84,11 @@ flowchart TD
 
 | Piece | Where it lives |
 | --- | --- |
-| Entrypoint | `app.py` registers the three pages and runs the selected one |
+| Entrypoint | `app.py` registers the four pages and runs the one chosen in the sidebar |
 | Briefing | `briefing.py` |
 | Vision summary | `pages/1_Vision_and_requirements.py` |
 | Architecture summary | `pages/2_Architecture.py` |
+| Releases page | `pages/3_Releases.py` |
 | Artwork | `assets/city-weather-background.jpg` behind the page, `assets/city-weather-icon.jpg` as the browser icon, `assets/city-weather-logo.jpg` in the sidebar |
 | Theme | `.streamlit/config.toml` sets the light widget palette |
 | Dependencies | `requirements.txt`, installed into `.venv` |

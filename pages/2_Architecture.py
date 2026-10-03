@@ -16,14 +16,14 @@ def architecture_diagrams() -> list[str]:
 app.prepare_page("Architecture")
 
 st.title("Architecture")
-st.page_link("briefing.py", label="Back to the briefing")
 
 conceptual, logical, physical = architecture_diagrams()
 
 st.header("Conceptual")
 st.write(
-    "The reader has a briefing, plus two short explanations: this architecture "
-    "and the vision and requirements. Four ideas sit behind the briefing: a place, "
+    "The reader has a briefing, two short explanations, and a releases page. "
+    "The explanations are this architecture and the vision and requirements. "
+    "Four ideas sit behind the briefing: a place, "
     "the weather there, the air there, and a short list of headlines. Preferences "
     "remember how the reader wants that page set up."
 )
@@ -36,8 +36,10 @@ st.write(
     "The main column asks for a place, then weather, then air quality when it is "
     "enabled, then headlines. Each outside call can fail on its own. A failed city "
     "lookup stops the rest of the page. A failed forecast, air-quality call, or feed "
-    "does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. The briefing also shows the latest GitHub release and its notes, and the reader can open an older release from the same list. The two explanation pages are "
-    "`pages/1_Vision_and_requirements.py` and `pages/2_Architecture.py`. The briefing links to both."
+    "does not hide the other sections. If a feed answers 403, the app reads that same feed through `api.rss2json.com`. "
+    "The sidebar lists the briefing, the two summaries, and the releases page. Choosing one opens that page. "
+    "The summaries are `pages/1_Vision_and_requirements.py` and `pages/2_Architecture.py`. "
+    "Releases are `pages/3_Releases.py`."
 )
 st.mermaid_chart(logical)
 st.markdown(
@@ -74,6 +76,7 @@ st.markdown(
 | Briefing | `briefing.py` |
 | Vision summary | `pages/1_Vision_and_requirements.py` |
 | Architecture summary | `pages/2_Architecture.py` |
+| Releases page | `pages/3_Releases.py` |
 | Artwork | `assets/` city, icon, and logo pictures |
 | Theme | `.streamlit/config.toml` |
 | Dependencies | `requirements.txt`, installed into `.venv` |

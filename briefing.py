@@ -29,9 +29,6 @@ if updated != prefs:
 
 st.title("Daily briefing")
 st.caption("Weather from Open-Meteo and headlines from the feeds you pick.")
-st.page_link("pages/1_Vision_and_requirements.py", label="Vision and requirements")
-st.page_link("pages/2_Architecture.py", label="Architecture")
-app.render_releases()
 
 if city:
     try:
