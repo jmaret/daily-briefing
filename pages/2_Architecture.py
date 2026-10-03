@@ -82,7 +82,7 @@ st.markdown(
 | Place and weather | `geocoding-api.open-meteo.com`, `api.open-meteo.com` |
 | Air quality | `air-quality-api.open-meteo.com` |
 | Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS`. A 403 is retried through `api.rss2json.com` |
-| Releases | GitHub Releases for `jmaret/daily-briefing`, created by `.github/workflows/release.yml` on each push to `main` |
+| Releases | GitHub Releases for `jmaret/daily-briefing`, created by `.github/workflows/release.yml` on each push to `main`. Overlapping pushes wait in line, and a repeat run for the same commit keeps the existing release |
 """
 )
 st.write(

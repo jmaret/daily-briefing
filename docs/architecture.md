@@ -93,6 +93,6 @@ flowchart TD
 | Place and weather | `geocoding-api.open-meteo.com`, `api.open-meteo.com` |
 | Air quality | `air-quality-api.open-meteo.com` |
 | Headlines | BBC, NPR, and Ars Technica RSS URLs in `FEEDS`. A 403 is retried through `api.rss2json.com` |
-| Releases | GitHub Releases for `jmaret/daily-briefing`, created by `.github/workflows/release.yml` on each push to `main`. A private repository needs `GITHUB_TOKEN` in the environment or in Streamlit secrets |
+| Releases | GitHub Releases for `jmaret/daily-briefing`, created by `.github/workflows/release.yml` on each push to `main`. Overlapping pushes wait in line, and a repeat run for the same commit keeps the release that already exists. A private repository needs `GITHUB_TOKEN` in the environment or in Streamlit secrets |
 
 Tests mock those HTTP calls. They do not need a network connection or a running Streamlit server.
