@@ -26,7 +26,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          already="$(gh release list --limit 100 --json tagName,targetCommitish | jq --arg sha "$GITHUB_SHA" '[.[] | select(.targetCommitish == $sha)] | length')"
+          already="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" | jq --arg sha "$GITHUB_SHA" '[.[] | select(.target_commitish == $sha)] | length')"
           if [ "$already" != "0" ]; then
             echo "Release already exists for $GITHUB_SHA"
             exit 0
