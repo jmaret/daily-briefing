@@ -169,14 +169,10 @@ def test_briefing_page_uses_saved_defaults(monkeypatch, prefs_path):
     assert metrics["Wind"] == "8 mph"
     assert metrics["US AQI"] == "42 · Good"
     assert any("Sample headline" in item.value for item in page.markdown)
-    assert any(item.value == "Release v2" for item in page.caption)
-    assert page.selectbox[0].value == "v2"
-    assert page.selectbox[0].options == ["v2", "v1"]
-    assert any("NPR backup" in item.value for item in page.markdown)
-
-    page.selectbox[0].set_value("v1").run()
-    assert not page.exception
-    assert any("First look" in item.value for item in page.markdown)
+    assert page.selectbox == []
+    assert "Vision and requirements" not in _link_labels(page)
+    assert "Architecture" not in _link_labels(page)
+    assert "Releases" not in _link_labels(page)
 
 
 def _nodes(page: AppTest) -> list:
@@ -201,16 +197,28 @@ def _link_labels(page: AppTest) -> list[str]:
     ]
 
 
-def test_briefing_links_to_the_summaries(monkeypatch, prefs_path):
+def test_sidebar_opens_the_summaries_and_releases(monkeypatch, prefs_path):
     monkeypatch.setattr(requests, "get", fake_get)
 
     page = AppTest.from_file(str(Path(app.__file__)))
     page.run(timeout=30)
+    page.switch_page("pages/1_Vision_and_requirements.py").run(timeout=30)
+    assert page.title[0].value == "Vision and requirements"
 
+    page.switch_page("pages/2_Architecture.py").run(timeout=30)
+    assert page.title[0].value == "Architecture"
+
+    page.switch_page("pages/3_Releases.py").run(timeout=30)
     assert not page.exception
-    labels = _link_labels(page)
-    assert "Vision and requirements" in labels
-    assert "Architecture" in labels
+    assert page.title[0].value == "Releases"
+    assert any(item.value == "Release v2" for item in page.caption)
+    assert page.selectbox[0].value == "v2"
+    assert page.selectbox[0].options == ["v2", "v1"]
+    assert any("NPR backup" in item.value for item in page.markdown)
+
+    page.selectbox[0].set_value("v1").run()
+    assert not page.exception
+    assert any("First look" in item.value for item in page.markdown)
 
 
 def test_vision_page_summarizes_requirements(monkeypatch, prefs_path):
@@ -224,7 +232,6 @@ def test_vision_page_summarizes_requirements(monkeypatch, prefs_path):
     assert page.title[0].value == "Vision and requirements"
     headers = [item.value for item in page.header]
     assert headers == ["Vision", "Who it is for", "Requirements", "Out of scope"]
-    assert "Back to the briefing" in _link_labels(page)
 
 
 def test_architecture_page_covers_three_views(monkeypatch, prefs_path):
@@ -238,7 +245,6 @@ def test_architecture_page_covers_three_views(monkeypatch, prefs_path):
     assert page.title[0].value == "Architecture"
     headers = [item.value for item in page.header]
     assert headers == ["Conceptual", "Logical", "Physical"]
-    assert "Back to the briefing" in _link_labels(page)
     diagrams = [item.value for item in page.markdown if "flowchart TD" in item.value]
     assert len(diagrams) == 3
 
