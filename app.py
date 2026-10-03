@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 import feedparser
@@ -217,8 +218,7 @@ def github_token() -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
-@st.cache_data(ttl=60 * 15, show_spinner=False)
-def fetch_releases(token: str) -> list[dict]:
+def _github_headers(token: str) -> dict:
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "daily-briefing/0.1",
@@ -226,10 +226,15 @@ def fetch_releases(token: str) -> list[dict]:
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_releases(token: str) -> list[dict]:
     response = requests.get(
         f"https://api.github.com/repos/{GITHUB_REPO}/releases",
         params={"per_page": 100},
-        headers=headers,
+        headers=_github_headers(token),
         timeout=15,
     )
     response.raise_for_status()
@@ -247,6 +252,7 @@ def fetch_releases(token: str) -> list[dict]:
         body = item.get("body")
         published = item.get("published_at")
         url = item.get("html_url")
+        sha = item.get("target_commitish")
         releases.append(
             {
                 "tag": tag,
@@ -254,34 +260,141 @@ def fetch_releases(token: str) -> list[dict]:
                 "body": body if isinstance(body, str) else "",
                 "published": published if isinstance(published, str) else "",
                 "url": url if isinstance(url, str) else "",
+                "sha": sha if isinstance(sha, str) else "",
             }
         )
+    releases.sort(key=lambda item: item["published"], reverse=True)
     return releases
+
+
+def _run_seconds(started: str, updated: str) -> int | None:
+    try:
+        start = datetime.fromisoformat(started.replace("Z", "+00:00"))
+        end = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return max(0, int((end - start).total_seconds()))
+
+
+def _format_duration(started: str, updated: str) -> str:
+    seconds = _run_seconds(started, updated)
+    if seconds is None:
+        return "—"
+    if seconds < 60:
+        return f"{seconds}s"
+    return f"{seconds // 60}m {seconds % 60}s"
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_workflow_runs(token: str) -> list[dict]:
+    response = requests.get(
+        f"https://api.github.com/repos/{GITHUB_REPO}/actions/workflows/release.yml/runs",
+        params={"per_page": 10},
+        headers=_github_headers(token),
+        timeout=15,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    runs = payload.get("workflow_runs") if isinstance(payload, dict) else None
+    if not isinstance(runs, list):
+        return []
+    parsed = []
+    for item in runs:
+        if not isinstance(item, dict):
+            continue
+        title = item.get("display_title")
+        conclusion = item.get("conclusion")
+        status = item.get("status")
+        url = item.get("html_url")
+        sha = item.get("head_sha")
+        started = item.get("run_started_at")
+        updated = item.get("updated_at")
+        parsed.append(
+            {
+                "title": title if isinstance(title, str) and title.strip() else "Release",
+                "conclusion": conclusion if isinstance(conclusion, str) else "",
+                "status": status if isinstance(status, str) else "",
+                "url": url if isinstance(url, str) else "",
+                "sha": sha if isinstance(sha, str) else "",
+                "started": started if isinstance(started, str) else "",
+                "updated": updated if isinstance(updated, str) else "",
+            }
+        )
+    return parsed
+
+
+def _github_load_error(error: requests.RequestException) -> str:
+    status = getattr(getattr(error, "response", None), "status_code", None)
+    if isinstance(error, requests.HTTPError) and status in (401, 403, 404):
+        return "Could not load GitHub data. A private repository needs GITHUB_TOKEN in the environment or in Streamlit secrets."
+    return f"Could not load GitHub data: {error}"
+
+
+def render_cicd_metrics() -> None:
+    token = github_token()
+    release_error = ""
+    run_error = ""
+    try:
+        releases = fetch_releases(token)
+    except requests.RequestException as error:
+        releases = []
+        release_error = _github_load_error(error)
+    try:
+        runs = fetch_workflow_runs(token)
+    except requests.RequestException as error:
+        runs = []
+        run_error = _github_load_error(error)
+
+    latest = releases[0]["tag"] if releases else "None"
+    last = runs[0] if runs else None
+    if last:
+        result = (last["conclusion"] or last["status"] or "unknown").replace("_", " ").capitalize()
+        duration = _format_duration(last["started"], last["updated"])
+    else:
+        result = "None"
+        duration = "—"
+    columns = st.columns(4)
+    columns[0].metric("Latest release", latest)
+    columns[1].metric("Releases", str(len(releases)))
+    columns[2].metric("Last workflow", result)
+    columns[3].metric("Last run", duration)
+    if release_error:
+        st.caption(release_error)
+    elif run_error:
+        st.caption(run_error)
+
+    if not runs:
+        return
+    by_sha = {item["sha"]: item["tag"] for item in releases if item["sha"]}
+    st.subheader("Recent runs")
+    for run in runs[:5]:
+        release = by_sha.get(run["sha"], "No release")
+        outcome = (run["conclusion"] or run["status"] or "unknown").replace("_", " ")
+        timing = _format_duration(run["started"], run["updated"])
+        label = f"{run['title']} · {outcome} · {release} · {timing}"
+        if run["url"]:
+            st.markdown(f"[{label}]({run['url']})")
+        else:
+            st.write(label)
 
 
 def render_releases() -> None:
     try:
         releases = fetch_releases(github_token())
-    except requests.HTTPError as error:
-        status = getattr(error.response, "status_code", None)
-        if status in (401, 403, 404):
-            st.caption(
-                "Could not load releases. A private repository needs GITHUB_TOKEN in the environment or in Streamlit secrets."
-            )
-            return
-        st.caption(f"Could not load releases: {error}")
-        return
     except requests.RequestException as error:
-        st.caption(f"Could not load releases: {error}")
+        st.caption(_github_load_error(error))
         return
     if not releases:
         st.caption("No GitHub releases yet.")
         return
 
     latest = releases[0]
-    st.caption(f"Release {latest['tag']}")
+    st.caption(f"Latest release {latest['tag']}")
     tags = [item["tag"] for item in releases]
-    choice = st.selectbox("Release", tags, index=0)
+    if st.session_state.get("tracked_release") != latest["tag"]:
+        st.session_state["tracked_release"] = latest["tag"]
+        st.session_state["release_choice"] = latest["tag"]
+    choice = st.selectbox("Release", tags, key="release_choice")
     selected = next(item for item in releases if item["tag"] == choice)
     if selected["published"]:
         st.caption(selected["published"])

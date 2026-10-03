@@ -81,6 +81,7 @@ def fake_get(url, **kwargs):
                     "body": "NPR backup",
                     "published_at": "2026-10-02T23:00:00Z",
                     "html_url": "https://github.com/jmaret/daily-briefing/releases/tag/v2",
+                    "target_commitish": "abc",
                 },
                 {
                     "tag_name": "v1",
@@ -90,6 +91,22 @@ def fake_get(url, **kwargs):
                     "html_url": "https://github.com/jmaret/daily-briefing/releases/tag/v1",
                 },
             ]
+        )
+    if url.endswith("/actions/workflows/release.yml/runs"):
+        return FakeResponse(
+            {
+                "workflow_runs": [
+                    {
+                        "display_title": "Merge pull request #4",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "html_url": "https://github.com/jmaret/daily-briefing/actions/runs/1",
+                        "head_sha": "abc",
+                        "run_started_at": "2026-10-03T02:30:26Z",
+                        "updated_at": "2026-10-03T02:30:38Z",
+                    }
+                ]
+            }
         )
     raise AssertionError(f"unexpected URL {url}")
 
@@ -212,7 +229,7 @@ def test_sidebar_opens_the_summaries_and_releases(monkeypatch, prefs_path):
     page.switch_page("pages/3_Releases.py").run(timeout=30)
     assert not page.exception
     assert page.title[0].value == "Releases"
-    assert any(item.value == "Release v2" for item in page.caption)
+    assert any(item.value == "Latest release v2" for item in page.caption)
     assert page.selectbox[0].value == "v2"
     assert page.selectbox[0].options == ["v2", "v1"]
     assert any("NPR backup" in item.value for item in page.markdown)
@@ -224,6 +241,12 @@ def test_sidebar_opens_the_summaries_and_releases(monkeypatch, prefs_path):
     page.switch_page("pages/4_CI_CD.py").run(timeout=30)
     assert not page.exception
     assert page.title[0].value == "CI/CD"
+    metrics = {item.label: item.value for item in page.metric}
+    assert metrics["Latest release"] == "v2"
+    assert metrics["Releases"] == "2"
+    assert metrics["Last workflow"] == "Success"
+    assert metrics["Last run"] == "12s"
+    assert any("Merge pull request #4" in item.value and "v2" in item.value for item in page.markdown)
     headers = [item.value for item in page.header]
     assert headers == ["When it runs", "The release job", "What you see", "The deployed app"]
     assert any("Release workflow" in item.value for item in page.markdown)
