@@ -5,6 +5,7 @@ import app
 app.prepare_page("CI/CD")
 
 st.title("CI/CD")
+app.render_cicd_metrics()
 st.write(
     "Each update that lands on main creates the next GitHub release. "
     "A deployed copy of this app rebuilds from that same update."
@@ -40,9 +41,10 @@ flowchart TD
 
 st.header("What you see")
 st.write(
-    "The Releases page shows the latest version and the notes for the one you pick. "
-    "The first release covers the history up to that commit. Later releases cover "
-    "only what changed since the one before."
+    "The numbers above use the newest release GitHub has published. "
+    "The Releases page shows that version and the notes for the one you pick. "
+    "A new release shows up within a minute. The first release covers the history "
+    "up to that commit. Later releases cover only what changed since the one before."
 )
 
 st.header("The deployed app")

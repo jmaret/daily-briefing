@@ -51,7 +51,7 @@ st.markdown(
 | Weather | Current conditions and five daily rows | 15 minutes |
 | Air quality | US AQI, PM2.5, and PM10 | 15 minutes |
 | Headlines | Up to five items per selected feed | 15 minutes |
-| Releases | Latest version and its notes, with older releases available | 15 minutes |
+| Releases | Latest version, its notes, and the CI/CD metrics | 1 minute |
 """
 )
 st.write(

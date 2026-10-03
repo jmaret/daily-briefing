@@ -42,7 +42,7 @@ flowchart TD
 | Weather | Current conditions and five daily rows | 15 minutes |
 | Air quality | US AQI, PM2.5, and PM10 | 15 minutes |
 | Headlines | Up to five items per selected feed | 15 minutes |
-| Releases | Latest version and its notes, with older releases available | 15 minutes |
+| Releases | Latest version, its notes, and the CI/CD metrics | 1 minute |
 
 Saved feeds that are no longer in the catalog are dropped. An unrecognized unit falls back to Fahrenheit. A missing, unreadable, or wrongly shaped preferences file falls back to New York, Fahrenheit, air quality on, and BBC News plus NPR News. A file that is JSON but not an object, or a setting that is not the expected type, is treated the same way for that setting.
 
@@ -92,7 +92,7 @@ flowchart TD
 | Vision summary | `pages/1_Vision_and_requirements.py` |
 | Architecture summary | `pages/2_Architecture.py` |
 | Releases page | `pages/3_Releases.py` |
-| CI/CD page | `pages/4_CI_CD.py` explains `.github/workflows/release.yml`, which runs on each push to `main` |
+| CI/CD page | `pages/4_CI_CD.py` shows release and workflow metrics, and explains `.github/workflows/release.yml` |
 | Artwork | `assets/city-weather-background.jpg` behind the page, `assets/city-weather-icon.jpg` as the browser icon, `assets/city-weather-logo.jpg` in the sidebar |
 | Theme | `.streamlit/config.toml` sets the light widget palette |
 | Dependencies | `requirements.txt`, installed into `.venv` |
